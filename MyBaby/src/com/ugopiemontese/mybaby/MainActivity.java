@@ -33,6 +33,8 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Base64;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -51,6 +53,8 @@ public class MainActivity extends Activity {
 	AsyncTask<Void, Void, Boolean> TaskAsincrono = null;
 	
 	protected static final int SELECT_PICTURE = 1234;
+	protected static final int REQUEST_MANUAL_INSERT = 1010;
+	
 	private static Uri capturedImageUri = null;
 	private String imageName;
 	private String encodedImage;
@@ -59,10 +63,16 @@ public class MainActivity extends Activity {
 	
 	private ArrayList<ArrayList<String>> analisiArray;
 
+	private RelativeLayout graph_container;
+	private RelativeLayout loading;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		graph_container = (RelativeLayout) findViewById(R.id.graph_parent);
+		loading = (RelativeLayout) findViewById(R.id.loading);
 		
 		ImageButton add = (ImageButton) findViewById(R.id.add);
 				
@@ -94,7 +104,9 @@ public class MainActivity extends Activity {
 	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		
 		if (requestCode == SELECT_PICTURE) {
+			
             try {
             	capturedImageUri = data.getData();
             	imageName = capturedImageUri.getLastPathSegment();
@@ -108,16 +120,40 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            
+        } else if (requestCode == REQUEST_MANUAL_INSERT) {
+        	
+        	if (resultCode == RESULT_OK) {
+	        	analisiArray = new ArrayList<ArrayList<String>>();
+	        	ArrayList<String> a = new ArrayList<String>();
+	        	a.add(data.getStringExtra("ESAME"));
+	        	a.add(data.getStringExtra("RISULTATO"));
+	        	a.add("cm");
+	        	a.add(data.getStringExtra("SETTIMANA"));
+	        	a.add("0.00");
+	        	
+	        	analisiArray.add(a);
+	        	ArrayList<String> analisiAvailable = new ArrayList<String>();
+			    analisiAvailable.add(data.getStringExtra("ESAME"));
+			    ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, analisiAvailable);
+			    Spinner spinAnalisi = (Spinner) findViewById(R.id.spinnerData);
+			    spinAnalisi.setAdapter(adapter);
+			    
+			    drawGraph(0);
+			    
+			    graph_container.setVisibility(View.VISIBLE);
+				loading.setVisibility(View.GONE);
+        	}
+        	
         }
+		
     }
 	
 	private class TaskAsincrono extends AsyncTask<Void, Void, Boolean> {
 		
 		@Override
 		protected void onPreExecute(){
-			RelativeLayout data = (RelativeLayout) findViewById(R.id.data);
-			data.setVisibility(View.GONE);
-			RelativeLayout loading = (RelativeLayout) findViewById(R.id.loading);
+			graph_container.setVisibility(View.GONE);
 			loading.setVisibility(View.VISIBLE);
 		}
 		
@@ -201,14 +237,12 @@ public class MainActivity extends Activity {
 			    
 			    drawGraph(0);
 			    
-			    RelativeLayout data = (RelativeLayout) findViewById(R.id.data);
-				data.setVisibility(View.VISIBLE);
+			    graph_container.setVisibility(View.VISIBLE);
 				
 			} else {
 				Toast.makeText(getApplicationContext(), "Si è verificato un problema, riprova!", Toast.LENGTH_LONG).show();
 			}
 			
-			RelativeLayout loading = (RelativeLayout) findViewById(R.id.loading);
 			loading.setVisibility(View.GONE);
 		}
 		
@@ -260,6 +294,22 @@ public class MainActivity extends Activity {
 	    TextView week = (TextView) findViewById(R.id.week);
 	    week.setText(analisiArray.get(i).get(3));
 		
+	}
+	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		getMenuInflater().inflate(R.menu.main, menu);
+		return true;
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+	    switch (item.getItemId()) {
+	    case R.id.insert:
+	    	Intent i = new Intent(this, InsertActivity.class);
+	        startActivityForResult(i, REQUEST_MANUAL_INSERT);
+	    }
+	    return super.onOptionsItemSelected(item);
 	}
 	
 	@Override

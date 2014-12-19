@@ -1,0 +1,9 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <item 
+        android:id="@+id/insert"
+        android:title="@string/inserimento_manuale"
+        android:showAsAction="ifRoom"
+        android:icon="@android:drawable/ic_menu_edit" />
+    
+</menu>
